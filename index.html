@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+  <title>英検3級 総合学習アプリ</title>
+  <style>
+    :root{
+      --bg:#fff7fb;
+      --card:#ffffff;
+      --accent:#ff8ba7;
+      --accent-2:#7ad3ff;
+      --muted:#6b6b6b;
+      --radius:14px;
+      --btn-h:56px;
+      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    }
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#fff);}
+    .app{max-width:460px;margin:0 auto;min-height:100vh;padding:18px;box-sizing:border-box;}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .logo{background:linear-gradient(135deg,var(--accent),var(--accent-2));width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 6px 18px rgba(122,211,255,0.18)}
+    h1{font-size:18px;margin:0}
+    p.subtitle{margin:0;color:var(--muted);font-size:13px}
+    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 8px 30px rgba(18,18,18,0.06);margin-bottom:12px}
+    .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .mode-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.7));border:1px solid rgba(0,0,0,0.04);height:96px;font-weight:600;cursor:pointer}
+    .mode-btn span{font-size:14px}
+    .screen{display:none}
+    .screen.active{display:block}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button.big{flex:1;height:var(--btn-h);border-radius:12px;border:0;background:var(--accent);color:white;font-size:16px;box-shadow:0 8px 20px rgba(255,139,167,0.18)}
+    button.big.secondary{background:var(--accent-2);color:#03506f}
+    .row{display:flex;gap:10px;align-items:center}
+    .word{font-size:28px;font-weight:700}
+    .small{font-size:13px;color:var(--muted)}
+    .choice{padding:12px;border-radius:10px;background:#f6f9ff;border:1px solid rgba(10,10,10,0.03);font-size:16px;cursor:pointer}
+    .choice.correct{background:linear-gradient(90deg,#d4ffd8,#eafbe6);border-color:#8be07b}
+    .choice.wrong{background:linear-gradient(90deg,#ffd7d7,#fff0f0);border-color:#ff7b7b}
+    .footer{position:fixed;left:0;right:0;bottom:0;padding:12px;background:transparent;display:flex;justify-content:center}
+    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.05)}
+    .hidden{display:none}
+    .speaker{background:rgba(0,0,0,0.06);border-radius:10px;padding:8px;cursor:pointer}
+    audio{width:100%;margin-top:8px}
+    @media (max-width:420px){.app{padding:12px}.mode-btn{height:88px}}
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div class="logo">E3</div>
+      <div>
+        <h1>英検3級 総合学習アプリ</h1>
+        <p class="subtitle">モードを選んで学習を始めよう（スマホ向け）</p>
+      </div>
+    </header>
+
+    <div id="home" class="card screen active">
+      <div class="modes">
+        <div class="mode-btn" data-mode="vocab">英単語モード
+          <span class="small">発音・意味確認</span>
+        </div>
+        <div class="mode-btn" data-mode="idiom">熟語千本ノック
+          <span class="small">4択でクイック練習</span>
+        </div>
+        <div class="mode-btn" data-mode="shunkan">瞬間英作文
+          <span class="small">熟語で瞬発力UP</span>
+        </div>
+        <div class="mode-btn" data-mode="interview">面接対策（二次）
+          <span class="small">音読＋録音で練習</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vocabulary Mode -->
+    <div id="vocab" class="card screen">
+      <div id="vocab-content">
+        <div class="row" style="justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="small">英単語</div>
+            <div id="v-word" class="word">loading...</div>
+            <div id="v-reading" class="small"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <div id="v-speak" class="speaker" title="発音">🔊</div>
+            <button id="v-next" class="big secondary">次の単語</button>
+          </div>
+        </div>
+        <div class="controls">
+          <button id="v-meaning-btn" class="big">意味を見る</button>
+          <button id="v-autoplay" class="big secondary">自動再生</button>
+        </div>
+        <div id="v-meaning" class="small hidden" style="margin-top:10px"></div>
+        <div style="margin-top:10px" class="small">データ: 英検3級レベルの単語サンプル</div>
+        <div style="margin-top:8px">
+          <button class="big" id="v-back">ホームに戻る</button>
+        </div>
+      </div>
+      <div id="vocab-complete" class="hidden" style="text-align:center;padding:28px 12px;">
+        <div class="word" style="font-size:32px;line-height:1.2;">お疲れ様でした！</div>
+        <div class="small" style="margin:12px 0 18px;">50個の単語を一巡しました。</div>
+        <button id="vocab-home" class="big secondary">ホームへ戻る</button>
+      </div>
+    </div>
+
+    <!-- Idiom Quiz Mode -->
+    <div id="idiom" class="card screen">
+      <div class="small">熟語千本ノック</div>
+      <div id="idiom-text" class="word">loading...</div>
+      <div class="small" id="idiom-example"></div>
+      <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px" id="idiom-choices"></div>
+      <div class="controls">
+        <button id="idiom-next" class="big secondary">次へ</button>
+      </div>
+      <div style="margin-top:10px">
+        <button class="big" id="idiom-back">ホームに戻る</button>
+      </div>
+    </div>
+
+    <!-- Shunkan Mode -->
+    <div id="shunkan" class="card screen">
+      <div class="small">瞬間英作文</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <select id="shunkan-idiom" style="flex:1;padding:10px;border-radius:10px;font-size:16px">
+        </select>
+        <button id="shunkan-start" class="big secondary" style="flex:0 0 120px">開始</button>
+      </div>
+      <div id="shunkan-card" class="hidden" style="margin-top:12px">
+        <div class="small">日本語:</div>
+        <div id="shunkan-jp" class="word" style="font-size:20px"></div>
+        <div class="controls">
+          <button id="shunkan-show" class="big">英語を見る</button>
+          <button id="shunkan-next" class="big secondary">次へ</button>
+        </div>
+        <div id="shunkan-en" class="small" style="margin-top:10px"></div>
+      </div>
+      <div style="margin-top:10px">
+        <button class="big" id="shunkan-back">ホームに戻る</button>
+      </div>
+    </div>
+
+    <!-- Interview Mode -->
+    <div id="interview" class="card screen">
+      <div class="small">面接対策（二次試験）</div>
+      <hr>
+      <div>
+        <div class="small">ステップ1: パッセージ音読</div>
+        <div id="passage" class="small" style="margin:8px 0;padding:10px;border-radius:10px;background:#fbfbff">I enjoy studying English and I want to improve my speaking skills.</div>
+        <div class="controls">
+          <button id="play-passage" class="big">面接官の範唱を聞く</button>
+        </div>
+      </div>
+      <hr>
+      <div style="margin-top:8px">
+        <div class="small">ステップ2: イラスト・自身への質問</div>
+        <div id="question-hidden" class="small" style="margin:8px 0;padding:10px;border-radius:10px;background:#fff7f7">質問は再生ボタンで聞けます（表示は隠されています）</div>
+        <div class="controls">
+          <button id="play-question" class="big secondary">面接官の質問を聞く</button>
+          <button id="reveal-question" class="big">質問を表示</button>
+        </div>
+        <div style="margin-top:10px">
+          <div class="small">録音</div>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button id="rec-start" class="big">録音開始</button>
+            <button id="rec-stop" class="big secondary">録音停止</button>
+          </div>
+          <div style="margin-top:8px">
+            <audio id="recording-play" controls class="hidden"></audio>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <button id="show-model-answer" class="big">答えを見る</button>
+        </div>
+        <div id="model-answer" class="small hidden" style="margin-top:8px;padding:10px;border-radius:10px;background:#f6fff2"></div>
+      </div>
+      <div style="margin-top:12px">
+        <button class="big" id="interview-back">ホームに戻る</button>
+      </div>
+    </div>
+
+    <div class="footer"><div class="badge">片手操作でサクサク学習</div></div>
+  </div>
+
+  <script>
+    // --- サンプルデータ ---
+    const vocabData = [
+      {en:'protect', jp:'守る'},
+      {en:'discover', jp:'発見する'},
+      {en:'improve', jp:'向上させる'},
+      {en:'afford', jp:'～の余裕がある'},
+      {en:'arrange', jp:'手配する・整える'},
+      {en:'encourage', jp:'励ます'},
+      {en:'difficult', jp:'難しい'},
+      {en:'favorite', jp:'お気に入りの'},
+      {en:'decide', jp:'決める'},
+      {en:'remain', jp:'残る'},
+      {en:'allow', jp:'許す・可能にする'},
+      {en:'answer', jp:'答える'},
+      {en:'appear', jp:'現れる'},
+      {en:'believe', jp:'信じる'},
+      {en:'borrow', jp:'借りる'},
+      {en:'change', jp:'変える・変わる'},
+      {en:'collect', jp:'集める'},
+      {en:'enough', jp:'十分な'},
+      {en:'experience', jp:'経験'},
+      {en:'forward', jp:'前へ・先に'},
+      {en:'garden', jp:'庭'},
+      {en:'health', jp:'健康'},
+      {en:'history', jp:'歴史'},
+      {en:'interest', jp:'興味'},
+      {en:'join', jp:'参加する'},
+      {en:'knowledge', jp:'知識'},
+      {en:'local', jp:'地元の'},
+      {en:'material', jp:'材料'},
+      {en:'notice', jp:'気づく'},
+      {en:'opinion', jp:'意見'},
+      {en:'perhaps', jp:'おそらく'},
+      {en:'possible', jp:'可能な'},
+      {en:'public', jp:'公共の'},
+      {en:'receive', jp:'受け取る'},
+      {en:'recommend', jp:'勧める'},
+      {en:'reply', jp:'返事'},
+      {en:'save', jp:'貯める・守る'},
+      {en:'secret', jp:'秘密'},
+      {en:'society', jp:'社会'},
+      {en:'support', jp:'支援する'},
+      {en:'travel', jp:'旅行する'},
+      {en:'traffic', jp:'交通'},
+      {en:'university', jp:'大学'},
+      {en:'visitor', jp:'訪問者'},
+      {en:'weather', jp:'天気'},
+      {en:'wonder', jp:'不思議に思う'},
+      {en:'wrong', jp:'間違っている'},
+      {en:'young', jp:'若い'},
+      {en:'study', jp:'勉強する'},
+      {en:'depend', jp:'頼る'}
+    ];
+
+    const idioms = [
+      {key:'look for', meaning:'～を探す', example:'I am looking for my umbrella.', example_jp:'傘を探しています。'},
+      {key:'take care of', meaning:'～の世話をする', example:'Please take care of the cat while I am away.', example_jp:'留守の間、猫の世話をしてください。'},
+      {key:'be good at', meaning:'～が得意である', example:'She is good at drawing pictures.', example_jp:'彼女は絵を描くのが得意です。'},
+      {key:'turn on', meaning:'～をつける', example:'Could you turn on the light?', example_jp:'電気をつけてくれますか。'},
+      {key:'run out of', meaning:'～を使い果たす', example:'We ran out of milk.', example_jp:'牛乳がなくなりました。'},
+      {key:'give up', meaning:'あきらめる', example:'Do not give up studying English.', example_jp:'英語の勉強をあきらめないで。'},
+      {key:'get up', meaning:'起きる', example:'I get up at six every morning.', example_jp:'私は毎朝6時に起きます。'},
+      {key:'put on', meaning:'着る・身につける', example:'She put on her jacket before going out.', example_jp:'彼女は出かける前にジャケットを着ました。'},
+      {key:'take off', meaning:'脱ぐ・離陸する', example:'The plane will take off soon.', example_jp:'飛行機はもうすぐ離陸します。'},
+      {key:'look after', meaning:'世話をする', example:'He looks after his little brother.', example_jp:'彼は弟の世話をします。'},
+      {key:'look forward to', meaning:'楽しみにする', example:'I look forward to meeting you.', example_jp:'お会いするのを楽しみにしています。'},
+      {key:'wake up', meaning:'目を覚ます', example:'Please wake up early tomorrow.', example_jp:'明日は早く起きてください。'},
+      {key:'fall asleep', meaning:'眠りにつく', example:'She fell asleep while reading a book.', example_jp:'彼女は本を読みながら眠りにつきました。'},
+      {key:'give back', meaning:'返す', example:'Please give back the book to the library.', example_jp:'その本を図書館に返してください。'},
+      {key:'find out', meaning:'調べる・知る', example:'We found out the answer yesterday.', example_jp:'私たちは昨日答えを調べました。'},
+      {key:'show up', meaning:'現れる', example:'He did not show up at the party.', example_jp:'彼はパーティーに現れませんでした。'},
+      {key:'turn off', meaning:'消す', example:'Turn off the light before you leave.', example_jp:'出かける前に電気を消してください。'},
+      {key:'take a walk', meaning:'散歩する', example:'Let us take a walk in the park.', example_jp:'公園を散歩しよう。'},
+      {key:'take a break', meaning:'休憩する', example:'Take a break if you feel tired.', example_jp:'疲れたら休憩してください。'},
+      {key:'make sure', meaning:'確認する', example:'Make sure you have your ticket.', example_jp:'チケットを持っているか確認してください。'},
+      {key:'wait for', meaning:'〜を待つ', example:'I will wait for you at the station.', example_jp:'駅であなたを待ちます。'},
+      {key:'look like', meaning:'〜のように見える', example:'She looks like her mother.', example_jp:'彼女は母親のように見えます。'},
+      {key:'pick up', meaning:'拾う・迎えに行く', example:'I will pick you up at five.', example_jp:'5時に迎えに行きます。'},
+      {key:'drop off', meaning:'降ろす・届ける', example:'Please drop me off here.', example_jp:'ここで降ろしてください。'},
+      {key:'put away', meaning:'片付ける', example:'Put away your toys after playing.', example_jp:'遊んだ後におもちゃを片付けてください。'},
+      {key:'check in', meaning:'チェックインする', example:'We checked in at the hotel.', example_jp:'私たちはホテルでチェックインしました。'},
+      {key:'check out', meaning:'チェックアウトする', example:'They checked out this morning.', example_jp:'彼らは今朝チェックアウトしました。'},
+      {key:'get along with', meaning:'仲良くする', example:'She gets along with her classmates.', example_jp:'彼女はクラスメートと仲良くしています。'},
+      {key:'get used to', meaning:'慣れる', example:'I am getting used to the new school.', example_jp:'私は新しい学校に慣れてきています。'},
+      {key:'take part in', meaning:'参加する', example:'Many students took part in the event.', example_jp:'多くの生徒がイベントに参加しました。'},
+      {key:'break down', meaning:'故障する・壊れる', example:'The car broke down on the way.', example_jp:'車が途中で故障しました。'},
+      {key:'break up', meaning:'別れる', example:'They broke up last month.', example_jp:'彼らは先月別れました。'},
+      {key:'set up', meaning:'設立する・準備する', example:'We set up the table for dinner.', example_jp:'私たちは夕食のためにテーブルを準備しました。'},
+      {key:'carry on', meaning:'続ける', example:'Carry on studying hard.', example_jp:'勉強を続けてください。'},
+      {key:'come back', meaning:'戻る', example:'Come back soon.', example_jp:'すぐに戻ってきてください。'},
+      {key:'go ahead', meaning:'先に進む・どうぞ', example:'Go ahead and ask your question.', example_jp:'どうぞ質問してください。'},
+      {key:'look over', meaning:'ざっと見る', example:'Please look over this paper.', example_jp:'この紙をざっと見てください。'},
+      {key:'turn around', meaning:'振り向く', example:'Turn around and look at me.', example_jp:'振り向いて私を見てください。'},
+      {key:'run into', meaning:'偶然会う', example:'I ran into my friend at the station.', example_jp:'駅で友達に偶然会いました。'},
+      {key:'bring back', meaning:'持ち帰る', example:'Please bring back the book tomorrow.', example_jp:'明日その本を持ってきてください。'},
+      {key:'give away', meaning:'あげる', example:'She gave away her old toys.', example_jp:'彼女は古いおもちゃをあげました。'},
+      {key:'fill out', meaning:'記入する', example:'Fill out this form, please.', example_jp:'この用紙にご記入ください。'},
+      {key:'pay back', meaning:'返済する', example:'I will pay you back next week.', example_jp:'来週あなたに返します。'},
+      {key:'hold on', meaning:'待つ・しっかりつかむ', example:'Hold on a moment, please.', example_jp:'少々お待ちください。'},
+      {key:'give in', meaning:'降参する', example:'He finally gave in to the request.', example_jp:'彼はついに頼みを受け入れました。'},
+      {key:'turn up', meaning:'現れる', example:'She turned up late for the meeting.', example_jp:'彼女は会議に遅れて現れました。'},
+      {key:'look into', meaning:'調べる', example:'I will look into the problem.', example_jp:'その問題を調べます。'},
+      {key:'bring up', meaning:'育てる・話題にする', example:'She brought up an interesting idea.', example_jp:'彼女は興味深いアイデアを話題にしました。'},
+      {key:'set off', meaning:'出発する', example:'We set off early in the morning.', example_jp:'私たちは朝早く出発しました。'},
+      {key:'run away', meaning:'逃げる', example:'The rabbit ran away quickly.', example_jp:'ウサギはすぐに逃げました。'}
+    ];
+
+    // 熟語選択肢生成用
+    const idiomChoicesPool = idioms.slice();
+
+    // 瞬間英作文データ（各熟語につき10個の例）
+    const shunkanData = {
+      'look for': [
+        {jp:'私は鍵を探しています。', en:'I am looking for my keys.'},
+        {jp:'彼は仕事を探している。', en:'He is looking for a job.'},
+        {jp:'彼女は新しい家を探すだろう。', en:'She will look for a new house.'},
+        {jp:'私たちは答えを探さなかった。', en:'We did not look for the answer.'},
+        {jp:'あなたは何を探しているの？', en:'What are you looking for?'},
+        {jp:'子供たちは宝物を探していた。', en:'The children were looking for treasure.'},
+        {jp:'私はその店を探していたところです。', en:'I have been looking for that shop.'},
+        {jp:'彼は友達を探して電話した。', en:'He called to look for his friend.'},
+        {jp:'彼女はバッグを探す必要がある。', en:'She needs to look for her bag.'},
+        {jp:'私たちは新しい先生を探しています。', en:'We are looking for a new teacher.'}
+      ],
+      'take care of': [
+        {jp:'彼女は犬の世話をする。', en:'She takes care of the dog.'},
+        {jp:'私の母は子供の世話をした。', en:'My mother took care of the children.'},
+        {jp:'彼は病人の世話をしている。', en:'He is taking care of the sick person.'},
+        {jp:'誰が猫の世話をするの？', en:'Who will take care of the cat?'},
+        {jp:'私は祖父母の世話をしたことがある。', en:'I have taken care of my grandparents.'},
+        {jp:'彼女は妹の面倒を見なかった。', en:'She did not take care of her sister.'},
+        {jp:'先生はクラスの準備をする。', en:'The teacher takes care of the class.'},
+        {jp:'彼らは庭の手入れをする。', en:'They take care of the garden.'},
+        {jp:'私に頼んでください、世話します。', en:'Please ask me; I will take care of it.'},
+        {jp:'あなたは荷物を預かってくれる？', en:'Will you take care of my luggage?'}
+      ],
+      'be good at': [
+        {jp:'彼は数学が得意だ。', en:'He is good at math.'},
+        {jp:'あなたは何が得意ですか？', en:'What are you good at?'},
+        {jp:'私は英語があまり得意ではない。', en:'I am not very good at English.'},
+        {jp:'彼女はピアノが上手だった。', en:'She was good at playing the piano.'},
+        {jp:'彼らは料理が得意になるだろう。', en:'They will be good at cooking.'},
+        {jp:'子供たちはゲームが得意だ。', en:'The children are good at games.'},
+        {jp:'私は絵を描くのが得意です。', en:'I am good at drawing pictures.'},
+        {jp:'彼はスポーツが得意ではなかった。', en:'He was not good at sports.'},
+        {jp:'あなたはダンスが得意になれる。', en:'You can be good at dancing.'},
+        {jp:'彼女は新しいことが得意だ。', en:'She is good at learning new things.'}
+      ]
+    };
+
+    // --- ヘルパー: 発音 ---
+    function speak(text, lang='en-US', rate=0.95, cancel=true){
+      if(!('speechSynthesis' in window)) return;
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = lang;
+      u.rate = rate;
+      u.pitch = 1;
+      if(cancel){ speechSynthesis.cancel(); }
+      speechSynthesis.speak(u);
+    }
+
+    // モード切替
+    document.querySelectorAll('.mode-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      const mode = btn.dataset.mode; showScreen(mode);
+    }));
+    document.getElementById('v-back').addEventListener('click',()=>showScreen('home'));
+    document.getElementById('idiom-back').addEventListener('click',()=>showScreen('home'));
+    document.getElementById('shunkan-back').addEventListener('click',()=>showScreen('home'));
+    document.getElementById('interview-back').addEventListener('click',()=>showScreen('home'));
+
+    function showScreen(id){
+      document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if(id !== 'vocab'){
+        stopVocabAutoPlay();
+      } else {
+        if(!vocabQueue.length || vocabCursor >= vocabQueue.length){
+          resetVocabQueue();
+          loadVocab();
+        }
+      }
+    }
+
+    // --- 英単語モード ---
+    let vIndex = 0;
+    let vocabQueue = [];
+    let vocabCursor = 0;
+    let vocabAutoPlaying = false;
+    let vocabAutoTimeout = null;
+    let vocabWakeLock = null;
+
+    function resetVocabQueue(){
+      vocabQueue = vocabData.map((_, i) => i);
+      for(let i = vocabQueue.length - 1; i > 0; i--){
+        const j = Math.floor(Math.random() * (i + 1));
+        [vocabQueue[i], vocabQueue[j]] = [vocabQueue[j], vocabQueue[i]];
+      }
+      vocabCursor = 0;
+    }
+
+    async function requestVocabWakeLock(){
+      if(!('wakeLock' in navigator)) return;
+      try{
+        vocabWakeLock = await navigator.wakeLock.request('screen');
+        vocabWakeLock.addEventListener('release', ()=>{
+          vocabWakeLock = null;
+        });
+      } catch(err){
+        vocabWakeLock = null;
+      }
+    }
+
+    async function releaseVocabWakeLock(){
+      if(vocabWakeLock){
+        try{ await vocabWakeLock.release(); } catch(err){}
+        vocabWakeLock = null;
+      }
+    }
+
+    function showVocabContent(){
+      document.getElementById('vocab-content').classList.remove('hidden');
+      document.getElementById('vocab-complete').classList.add('hidden');
+    }
+
+    function showVocabComplete(){
+      stopVocabAutoPlay();
+      document.getElementById('vocab-content').classList.add('hidden');
+      document.getElementById('vocab-complete').classList.remove('hidden');
+      releaseVocabWakeLock();
+    }
+
+    function stopVocabAutoPlay(){
+      vocabAutoPlaying = false;
+      if(vocabAutoTimeout){
+        clearTimeout(vocabAutoTimeout);
+        vocabAutoTimeout = null;
+      }
+      const btn = document.getElementById('v-autoplay');
+      if(btn){ btn.textContent = '自動再生'; }
+      releaseVocabWakeLock();
+    }
+
+    async function startVocabAutoPlay(){
+      if(vocabAutoPlaying) return;
+      vocabAutoPlaying = true;
+      document.getElementById('v-autoplay').textContent = '停止';
+      await requestVocabWakeLock();
+      if(document.getElementById('vocab').classList.contains('active')){
+        scheduleVocabAutoNext();
+      }
+    }
+
+    function scheduleVocabAutoNext(){
+      if(vocabAutoTimeout){
+        clearTimeout(vocabAutoTimeout);
+      }
+      vocabAutoTimeout = setTimeout(()=>{
+        if(!vocabAutoPlaying) return;
+        const w = vocabData[vIndex];
+        document.getElementById('v-meaning').classList.remove('hidden');
+        speak(w.jp, 'ja-JP', 0.95, false);
+        vocabAutoTimeout = setTimeout(()=>{
+          if(!vocabAutoPlaying) return;
+          loadVocab();
+        }, 2000);
+      }, 1800);
+    }
+
+    function loadVocab(idx){
+      if(typeof idx === 'undefined'){
+        if(!vocabQueue.length){ resetVocabQueue(); }
+        if(vocabCursor >= vocabQueue.length){
+          showVocabComplete();
+          return;
+        }
+        idx = vocabQueue[vocabCursor++];
+      }
+      vIndex = idx;
+      const w = vocabData[vIndex];
+      showVocabContent();
+      document.getElementById('v-word').textContent = w.en;
+      document.getElementById('v-meaning').classList.add('hidden');
+      document.getElementById('v-meaning').textContent = w.jp;
+      document.getElementById('v-reading').textContent = '';
+      speak(w.en, 'en-US', 0.95, true);
+      if(vocabAutoPlaying){
+        scheduleVocabAutoNext();
+      }
+    }
+    document.getElementById('v-next').addEventListener('click',()=>loadVocab());
+    document.getElementById('v-autoplay').addEventListener('click',()=>{
+      if(vocabAutoPlaying){ stopVocabAutoPlay(); }
+      else { startVocabAutoPlay(); }
+    });
+    document.getElementById('v-meaning-btn').addEventListener('click',()=>{
+      document.getElementById('v-meaning').classList.toggle('hidden');
+    });
+    document.getElementById('v-speak').addEventListener('click',()=>{
+      const w = vocabData[vIndex]; speak(w.en);
+    });
+    document.getElementById('vocab-home').addEventListener('click',()=>showScreen('home'));
+
+    // --- AudioContext 効果音 ---
+    let audioCtx = null;
+    function getAudioCtx(){
+      if(!audioCtx){
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+    function playEffect(isCorrect){
+      const ctx = getAudioCtx();
+      const now = ctx.currentTime;
+      const gain = ctx.createGain();
+      gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0, now);
+      if(isCorrect){
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        osc1.type = 'triangle';
+        osc2.type = 'triangle';
+        osc1.frequency.setValueAtTime(880, now);
+        osc2.frequency.setValueAtTime(1320, now + 0.12);
+        osc1.connect(gain);
+        osc2.connect(gain);
+        gain.gain.linearRampToValueAtTime(0.36, now + 0.01);
+        gain.gain.setValueAtTime(0.36, now + 0.12);
+        gain.gain.linearRampToValueAtTime(0, now + 0.34);
+        osc1.start(now);
+        osc1.stop(now + 0.16);
+        osc2.start(now + 0.12);
+        osc2.stop(now + 0.34);
+        return new Promise(resolve => {
+          osc2.onended = ()=>{
+            gain.disconnect();
+            resolve();
+          };
+        });
+      } else {
+        const osc = ctx.createOscillator();
+        osc.connect(gain);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(170, now);
+        gain.gain.linearRampToValueAtTime(0.24, now + 0.01);
+        gain.gain.linearRampToValueAtTime(0, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+        return new Promise(resolve => {
+          osc.onended = ()=>{
+            gain.disconnect();
+            resolve();
+          };
+        });
+      }
+    }
+
+    // --- 熟語千本ノックモード ---
+    let currentIdiom = null;
+    function nextIdiom(){
+      const i = Math.floor(Math.random()*idioms.length);
+      currentIdiom = idioms[i];
+      document.getElementById('idiom-text').textContent = currentIdiom.key;
+      document.getElementById('idiom-example').textContent = '';
+      const choicesEl = document.getElementById('idiom-choices');
+      choicesEl.innerHTML = '';
+      const pool = idioms.filter(it=>it.key!==currentIdiom.key);
+      const opts = [currentIdiom.meaning];
+      while(opts.length<4 && pool.length){
+        const r = pool.splice(Math.floor(Math.random()*pool.length),1)[0];
+        if(!opts.includes(r.meaning)) opts.push(r.meaning);
+      }
+      opts.sort(()=>Math.random()-0.5);
+      opts.forEach(opt=>{
+        const b = document.createElement('div'); b.className='choice'; b.textContent=opt;
+        b.addEventListener('click',async()=>{
+          if(b.dataset.answered) return;
+          b.dataset.answered='1';
+          const correct = opt===currentIdiom.meaning;
+          if(correct){ b.classList.add('correct'); }
+          else{ b.classList.add('wrong'); }
+          document.getElementById('idiom-example').textContent = currentIdiom.example + ' — ' + currentIdiom.example_jp;
+          Array.from(choicesEl.children).forEach(ch=>ch.style.pointerEvents='none');
+          await playEffect(correct);
+          setTimeout(()=>{
+            speak(currentIdiom.example);
+          }, 600);
+        });
+        choicesEl.appendChild(b);
+      });
+    }
+    document.getElementById('idiom-next').addEventListener('click',nextIdiom);
+
+    // --- 瞬間英作文 ---
+    const shSelect = document.getElementById('shunkan-idiom');
+    Object.keys(shunkanData).forEach(k=>{
+      const o = document.createElement('option'); o.value=k; o.textContent=k; shSelect.appendChild(o);
+    });
+    let shList = [], shCursor = 0;
+    document.getElementById('shunkan-start').addEventListener('click',()=>{
+      const key = shSelect.value; shList = shunkanData[key].slice(); shCursor=0;
+      document.getElementById('shunkan-card').classList.remove('hidden');
+      showSh();
+    });
+    function showSh(){
+      const it = shList[shCursor];
+      document.getElementById('shunkan-jp').textContent = it.jp;
+      document.getElementById('shunkan-en').textContent = '';
+    }
+    document.getElementById('shunkan-show').addEventListener('click',()=>{
+      const it = shList[shCursor]; document.getElementById('shunkan-en').textContent = it.en; speak(it.en);
+    });
+    document.getElementById('shunkan-next').addEventListener('click',()=>{
+      shCursor++; if(shCursor>=shList.length){ alert('10問終了です'); document.getElementById('shunkan-card').classList.add('hidden'); return; }
+      showSh();
+    });
+
+    // --- 面接対策 ---
+    const passageText = 'Please read the passage slowly. Good luck!';
+    const questionText = 'Can you tell me about your favorite hobby and why you like it?';
+    const modelAnswerText = 'I like playing soccer because it is fun and I can exercise with friends.';
+    document.getElementById('play-passage').addEventListener('click',()=>{ speak(document.getElementById('passage').textContent); });
+    document.getElementById('play-question').addEventListener('click',()=>{ speak(questionText); });
+    document.getElementById('reveal-question').addEventListener('click',()=>{ document.getElementById('question-hidden').textContent = questionText; });
+    document.getElementById('show-model-answer').addEventListener('click',()=>{ document.getElementById('model-answer').classList.remove('hidden'); document.getElementById('model-answer').textContent = modelAnswerText; speak(modelAnswerText); });
+
+    // 録音機能
+    let mediaRecorder, audioChunks=[];
+    document.getElementById('rec-start').addEventListener('click',async()=>{
+      if(!navigator.mediaDevices) return alert('録音に対応していません');
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      mediaRecorder = new MediaRecorder(stream);
+      audioChunks = [];
+      mediaRecorder.ondataavailable = e=>audioChunks.push(e.data);
+      mediaRecorder.onstop = ()=>{
+        const blob = new Blob(audioChunks,{type:'audio/webm'});
+        const url = URL.createObjectURL(blob);
+        const a = document.getElementById('recording-play'); a.src = url; a.classList.remove('hidden');
+      };
+      mediaRecorder.start();
+      alert('録音を開始しました');
+    });
+    document.getElementById('rec-stop').addEventListener('click',()=>{
+      if(mediaRecorder && mediaRecorder.state!=='inactive'){ mediaRecorder.stop(); alert('録音を停止しました'); }
+    });
+
+    // --- 初期化 ---
+    function init(){
+      loadVocab(0);
+      nextIdiom();
+      // fill shunkan select default
+      shSelect.value = Object.keys(shunkanData)[0];
+    }
+    init();
+  </script>
+</body>
+</html>
