@@ -5,66 +5,106 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
   <title>英検3級 総合学習アプリ</title>
   <style>
-      /* animations */
-      .msg{opacity:0;transform:translateY(8px);transition:all .28s ease}
-      .bubble.show .msg{opacity:1;transform:translateY(0)}
-      .bubble.ai .msg{animation:slideInLeft .28s ease}
-      .bubble.user .msg{animation:slideInRight .28s ease}
-      @keyframes slideInLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
-      @keyframes slideInRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
-      .judge{font-weight:bold;padding:6px 10px;border-radius:12px;margin-top:6px;display:inline-block}
-      .judge.good{background:#d4f8df;color:#0a7a3a}
-      .judge.bad{background:#ffdede;color:#b80000}
+    /* Minecraft-style theme: blocky, no-radius, bold black borders */
     :root{
-      --bg:#fff7fb;
-      --card:#ffffff;
-      --accent:#ff8ba7;
-      --accent-2:#7ad3ff;
-      --muted:#6b6b6b;
-      --radius:14px;
+      --green:#5c8e32; /* grass */
+      --brown:#735135; /* dirt */
+      --stone:#4a4a4a; /* stone */
+      --accent:#8dc63f;
+      --muted:#dcd7c9;
+      --text-dark:#111;
+      --border-color:#000;
+      --border:3px solid var(--border-color);
+      --shadow-y:6px;
       --btn-h:56px;
-      font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+      font-family: "Segoe UI", Arial, "Hiragino Kaku Gothic Pro", Meiryo, sans-serif;
     }
-    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--bg),#fff);}
-    .app{max-width:460px;margin:0 auto;min-height:100vh;padding:18px;box-sizing:border-box;}
+
+    /* remove all rounding */
+    * , *::before, *::after { box-sizing:border-box; border-radius:0 !important; }
+
+    html,body{height:100%;margin:0;background:linear-gradient(180deg,var(--green),var(--brown));color:var(--muted)}
+    .app{max-width:460px;margin:0 auto;min-height:100vh;padding:18px}
+
     header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
-    .logo{background:linear-gradient(135deg,var(--accent),var(--accent-2));width:56px;height:56px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;box-shadow:0 6px 18px rgba(122,211,255,0.18)}
-    h1{font-size:18px;margin:0}
+    .logo{background:var(--stone);width:56px;height:56px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;box-shadow:0 var(--shadow-y) 0 var(--border-color);border:var(--border)}
+    h1{font-size:18px;margin:0;color:#fff}
     p.subtitle{margin:0;color:var(--muted);font-size:13px}
-    .card{background:var(--card);border-radius:var(--radius);padding:14px;box-shadow:0 8px 30px rgba(18,18,18,0.06);margin-bottom:12px}
+
+    /* Cards and panels */
+    .card{background:var(--brown);border:var(--border);padding:14px;box-shadow:0 var(--shadow-y) 0 var(--border-color);margin-bottom:12px}
+
+    /* Mode grid and buttons: simple blocky buttons, text-only */
     .modes{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-    .mode-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0.7));border:1px solid rgba(0,0,0,0.04);height:96px;font-weight:600;cursor:pointer}
-    .mode-btn span{font-size:14px}
+    .mode-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:12px;background:var(--green);border:var(--border);color:var(--text-dark);height:96px;font-weight:800;cursor:pointer;box-shadow:0 var(--shadow-y) 0 var(--border-color);transition:transform .08s ease, filter .12s ease}
+    .mode-btn .small{font-size:13px;color:var(--muted);}
+
     .screen{display:none}
     .screen.active{display:block}
+
     .controls{display:flex;gap:8px;margin-top:12px}
-    button.big{flex:1;height:var(--btn-h);border-radius:12px;border:0;background:var(--accent);color:white;font-size:16px;box-shadow:0 8px 20px rgba(255,139,167,0.18)}
-    button.big.secondary{background:var(--accent-2);color:#03506f}
+
+    /* Buttons: thick black border, shadow, pressed-down effect */
+    button.big{flex:1;height:var(--btn-h);border:var(--border);background:var(--accent);color:var(--text-dark);font-size:16px;font-weight:800;box-shadow:0 var(--shadow-y) 0 var(--border-color);cursor:pointer;transition:transform .08s ease}
+    button.big.secondary{background:#c2a15c}
+    button.big:active{transform:translateY(4px);box-shadow:0 2px 0 var(--border-color)}
+
     .row{display:flex;gap:10px;align-items:center}
-    .word{font-size:28px;font-weight:700}
+    .word{font-size:28px;font-weight:900;color:#fff}
     .small{font-size:13px;color:var(--muted)}
-    .choice{padding:12px;border-radius:10px;background:#f6f9ff;border:1px solid rgba(10,10,10,0.03);font-size:16px;cursor:pointer}
-    .choice.correct{background:linear-gradient(90deg,#d4ffd8,#eafbe6);border-color:#8be07b}
-    .choice.wrong{background:linear-gradient(90deg,#ffd7d7,#fff0f0);border-color:#ff7b7b}
-    .footer{position:fixed;left:0;right:0;bottom:0;padding:12px;background:transparent;display:flex;justify-content:center}
-    .badge{font-size:12px;padding:6px 10px;border-radius:999px;background:rgba(0,0,0,0.05)}
+
+    /* Choice tiles */
+    .choice{padding:12px;border:var(--border);background:var(--green);color:#fff;font-size:16px;cursor:pointer;box-shadow:0 var(--shadow-y) 0 var(--border-color);transition:transform .08s ease}
+    .choice.correct{background:#a0c861}
+    .choice.wrong{background:#d16c56}
+
+    /* Footer */
+    .footer{position:fixed;left:0;right:0;bottom:0;padding:12px;background:rgba(0,0,0,0.18);display:flex;justify-content:center;border-top:var(--border);box-shadow:0 -3px 0 var(--border-color)}
+    .badge{font-size:12px;padding:6px 10px;border:var(--border);background:var(--brown);color:var(--muted)}
+
     .hidden{display:none}
-    .speaker{background:rgba(0,0,0,0.06);border-radius:10px;padding:8px;cursor:pointer}
-    audio{width:100%;margin-top:8px}
-    @media (max-width:420px){.app{padding:12px}.mode-btn{height:88px}}
-    /* Chat-style (瞬間英作文) styles */
-    .chat-wrap{background:linear-gradient(180deg,#e6f7ea,#dff6e6);padding:12px;border-radius:12px;height:44vh;overflow:auto}
+
+    /* Small controls */
+    .speaker{background:#fff;border:var(--border);padding:8px;cursor:pointer;box-shadow:0 var(--shadow-y) 0 var(--border-color);color:var(--text-dark);font-weight:700}
+    audio{width:100%;margin-top:8px;border:var(--border);background:var(--stone)}
+    select, input, textarea{border:var(--border);background:#fff;color:var(--text-dark);font-size:16px}
+
+    /* Chat area */
+    .chat-wrap{background:var(--green);padding:12px;border:var(--border);height:44vh;overflow:auto;box-shadow:0 var(--shadow-y) 0 var(--border-color)}
     .chat-inner{max-width:420px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
     .bubble{display:flex;gap:8px;align-items:flex-end}
     .bubble.ai{justify-content:flex-start}
     .bubble.user{justify-content:flex-end}
-    .avatar{width:36px;height:36px;border-radius:50%;background:#fff;border:2px solid rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-weight:700}
-    .bubble .msg{max-width:72%;padding:10px 14px;border-radius:18px;box-shadow:0 2px 0 rgba(0,0,0,0.04);background:#fff}
-    .bubble.user .msg{background:linear-gradient(90deg,#cfe9ff,#b4e0ff);color:#022}
+    .avatar{width:36px;height:36px;border:2px solid var(--border-color);background:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text-dark)}
+    .bubble .msg{max-width:72%;padding:10px 14px;border:var(--border);box-shadow:0 var(--shadow-y) 0 var(--border-color);background:var(--muted);color:var(--text-dark)}
+    .bubble.user .msg{background:var(--accent)}
+
     .chat-controls{display:flex;align-items:center;gap:8px;margin-top:8px}
-    .mic-btn{width:56px;height:56px;border-radius:28px;border:0;background:#ff8ba7;color:#fff;font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 18px rgba(255,139,167,0.16);cursor:pointer}
+    .mic-btn{width:56px;height:56px;border:var(--border);background:var(--accent);color:var(--text-dark);font-size:22px;display:flex;align-items:center;justify-content:center;box-shadow:0 var(--shadow-y) 0 var(--border-color);cursor:pointer;transition:transform .08s ease}
     .mic-btn.recording{background:#e74c3c}
     .status-small{font-size:13px;color:var(--muted)}
+
+    /* judge badges */
+    .judge{font-weight:bold;padding:6px 10px;margin-top:6px;display:inline-block;border:var(--border);background:#fff;color:var(--text-dark)}
+    .judge.good{background:#d4f8df;color:#0a7a3a}
+    .judge.bad{background:#ffdede;color:#b80000}
+
+    .card hr{border:none;border-top:3px solid var(--border-color);margin:12px 0}
+    #passage, #question-hidden, #model-answer{background:var(--muted);border:var(--border);padding:10px;color:var(--text-dark)}
+
+    /* pressed effects for other interactive elements */
+    .mode-btn:active, .choice:active, .mic-btn:active, .speaker:active{transform:translateY(4px);box-shadow:0 2px 0 var(--border-color)}
+    .mode-btn:hover, button.big:hover, .choice:hover, .mic-btn:hover, .speaker:hover{filter:brightness(1.03)}
+
+    @media (max-width:420px){.app{padding:12px}.mode-btn{height:88px}}
+
+    /* message animations (kept) */
+    .msg{opacity:0;transform:translateY(8px);transition:all .28s ease}
+    .bubble.show .msg{opacity:1;transform:translateY(0)}
+    .bubble.ai .msg{animation:slideInLeft .28s ease}
+    .bubble.user .msg{animation:slideInRight .28s ease}
+    @keyframes slideInLeft{from{opacity:0;transform:translateX(-18px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideInRight{from{opacity:0;transform:translateX(18px)}to{opacity:1;transform:translateX(0)}}
   </style>
 </head>
 <body>
@@ -143,7 +183,7 @@
     <div id="shunkan" class="card screen">
       <div class="small">瞬間英作文（チャット風）</div>
       <div style="display:flex;gap:8px;margin-top:8px">
-        <select id="shunkan-idiom" style="flex:1;padding:10px;border-radius:10px;font-size:16px">
+        <select id="shunkan-idiom" style="flex:1;padding:10px;font-size:16px">
         </select>
         <button id="shunkan-start" class="big secondary" style="flex:0 0 120px">開始</button>
       </div>
@@ -169,7 +209,7 @@
       <hr>
       <div>
         <div class="small">ステップ1: パッセージ音読</div>
-        <div id="passage" class="small" style="margin:8px 0;padding:10px;border-radius:10px;background:#fbfbff">I enjoy studying English and I want to improve my speaking skills.</div>
+        <div id="passage" class="small" style="margin:8px 0;padding:10px;background:#fbfbff">I enjoy studying English and I want to improve my speaking skills.</div>
         <div class="controls">
           <button id="play-passage" class="big">面接官の範唱を聞く</button>
         </div>
@@ -177,7 +217,7 @@
       <hr>
       <div style="margin-top:8px">
         <div class="small">ステップ2: イラスト・自身への質問</div>
-        <div id="question-hidden" class="small" style="margin:8px 0;padding:10px;border-radius:10px;background:#fff7f7">質問は再生ボタンで聞けます（表示は隠されています）</div>
+        <div id="question-hidden" class="small" style="margin:8px 0;padding:10px;background:#fff7f7">質問は再生ボタンで聞けます（表示は隠されています）</div>
         <div class="controls">
           <button id="play-question" class="big secondary">面接官の質問を聞く</button>
           <button id="reveal-question" class="big">質問を表示</button>
@@ -195,7 +235,7 @@
         <div style="margin-top:10px">
           <button id="show-model-answer" class="big">答えを見る</button>
         </div>
-        <div id="model-answer" class="small hidden" style="margin-top:8px;padding:10px;border-radius:10px;background:#f6fff2"></div>
+        <div id="model-answer" class="small hidden" style="margin-top:8px;padding:10px;background:#f6fff2"></div>
       </div>
       <div style="margin-top:12px">
         <button class="big" id="interview-back">ホームに戻る</button>
@@ -260,14 +300,8 @@
       {en:'depend', jp:'頼る'}
     ];
 
+    // --- 熟語データ ---
     const idioms = [
-      {key:'look for', meaning:'～を探す', example:'I am looking for my umbrella.', example_jp:'傘を探しています。'},
-      {key:'take care of', meaning:'～の世話をする', example:'Please take care of the cat while I am away.', example_jp:'留守の間、猫の世話をしてください。'},
-      {key:'be good at', meaning:'～が得意である', example:'She is good at drawing pictures.', example_jp:'彼女は絵を描くのが得意です。'},
-      {key:'turn on', meaning:'～をつける', example:'Could you turn on the light?', example_jp:'電気をつけてくれますか。'},
-      {key:'run out of', meaning:'～を使い果たす', example:'We ran out of milk.', example_jp:'牛乳がなくなりました。'},
-      {key:'give up', meaning:'あきらめる', example:'Do not give up studying English.', example_jp:'英語の勉強をあきらめないで。'},
-      {key:'get up', meaning:'起きる', example:'I get up at six every morning.', example_jp:'私は毎朝6時に起きます。'},
       {key:'put on', meaning:'着る・身につける', example:'She put on her jacket before going out.', example_jp:'彼女は出かける前にジャケットを着ました。'},
       {key:'take off', meaning:'脱ぐ・離陸する', example:'The plane will take off soon.', example_jp:'飛行機はもうすぐ離陸します。'},
       {key:'look after', meaning:'世話をする', example:'He looks after his little brother.', example_jp:'彼は弟の世話をします。'},
